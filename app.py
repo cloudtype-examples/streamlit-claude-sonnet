@@ -49,23 +49,30 @@ def main():
     if "file_upload_time" not in st.session_state:
         st.session_state.file_upload_time = None
 
+    if "uploaded_file" not in st.session_state:
+        st.session_state.uploaded_file = None
+
     api_key = st.text_input("Anthropic API 키:", type="password")
 
     if api_key:
         st.write("📁 아래 'Browse files' 버튼을 클릭하여 파일을 업로드하세요.")
-        uploaded_file = st.file_uploader("CSV, TXT, 또는 PDF 파일 선택", type=["csv", "txt", "pdf"])
 
         if st.session_state.file_upload_time is not None and time.time() - st.session_state.file_upload_time > 600:
             st.warning("⚠️ 세션이 만료되었습니다. 파일을 다시 업로드해주세요.")
             st.session_state.file_upload_time = None
             st.session_state.system_prompt = None
-            uploaded_file = None
+            st.session_state.uploaded_file = None
+
+        uploaded_file = st.file_uploader("CSV, TXT, 또는 PDF 파일 선택", type=["csv", "txt", "pdf"])
 
         if uploaded_file is not None:
-            file_content = load_file(uploaded_file)
+            st.session_state.uploaded_file = uploaded_file
+            st.session_state.file_upload_time = time.time()
+
+        if st.session_state.uploaded_file is not None:
+            file_content = load_file(st.session_state.uploaded_file)
             if file_content is not None:
-                st.success(f"'{uploaded_file.name}' 파일이 성공적으로 업로드되었습니다! ✅")
-                st.session_state.file_upload_time = time.time()
+                st.success(f"'{st.session_state.uploaded_file.name}' 파일이 성공적으로 업로드되었습니다! ✅")
 
                 if isinstance(file_content, pd.DataFrame):
                     context = file_content.to_csv(index=False)
